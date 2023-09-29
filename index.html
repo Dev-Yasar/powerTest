@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BLE Cycling Power</title>
+</head>
+<body>
+    <h1>BLE Cycling Power Data</h1>
+    <button id="connectButton">Connect to Bike</button>
+    <div id="dataContainer">
+        <p><strong>Power:</strong> <span id="powerValue">-</span> watts</p>
+        <p><strong>Cadence:</strong> <span id="cadenceValue">-</span> RPM</p>
+    </div>
+
+    <script>
+        async function connectToDevice() {
+            try {
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: ['cycling_power'] }],
+                });
+                 console.log("1");
+                const server = await device.gatt.connect();
+                console.log("2");
+                const cpsService = await server.getPrimaryService('cycling_power');
+                console.log("3");
+                const powerCharacteristic = await cpsService.getCharacteristic('cycling_power_measurement');
+                // console.log("4");
+                // const cadenceCharacteristic = await cpsService.getCharacteristic('0x0483');
+
+                console.log("5");
+                const powerValueSpan = document.getElementById('powerValue');
+                console.log("6");
+                // const cadenceValueSpan = document.getElementById('cadenceValue');
+
+                console.log("7");
+                device.addEventListener('gattserverdisconnected', () => {
+                    // Handle device disconnection here
+                });
+
+                const updateValues = async () => {
+                    console.log("8");
+                    const powerValue = await powerCharacteristic.readValue();
+                    console.log("9");
+                    // const cadenceValue = await cadenceCharacteristic.readValue();
+
+                    // Parse power and cadence values according to the Bluetooth standard.
+                    const power = powerValue.getInt16(0, true) / 10; // Divide by 10 for 1 decimal place
+                    // const cadence = cadenceValue.getUint8(0);
+
+                    powerValueSpan.textContent = power + ' watts';
+                    // cadenceValueSpan.textContent = cadence + ' RPM';
+                };
+
+                updateValues();
+
+                // Set up a periodic update (e.g., every 2 seconds)
+                setInterval(updateValues, 2000);
+
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        const connectButton = document.getElementById('connectButton');
+        connectButton.addEventListener('click', connectToDevice);
+    </script>
+</body>
+</html>
